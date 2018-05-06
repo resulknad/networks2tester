@@ -9,7 +9,7 @@ Tester still needs testing.
 ## Installation
 Install golang 1.10 (older versions might work as well, didn't test) and set path variables as described in installation instructions of golang.
 
-For the graph visualization dot is required. Tester might fail if dot isn't installed on your system.
+For the graph visualization the graphviz package is required. Tester might fail if dot executable isn't available on your system.
 
 ```bash
 go get -u github.com/resulknad/networks2tester
