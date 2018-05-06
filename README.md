@@ -1,5 +1,6 @@
 networks2tester
 ===============
+**Do not expect this tester to be 100% correct.**
 
 Unofficial tester for second networks project. It constructs a graph, runs dijkstra on it and checks your implementation (whether all your next_hops are correct). Currently it doesn't look at your routing table. Supports dynamically adjusting weights and dropping links.
 
