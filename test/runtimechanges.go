@@ -79,8 +79,8 @@ func (t *Test) TakeDownUni(a,b *Router) {
 }
 
 func (t *Test) TakeDownInterface(intrf *Interface) {	
-	t.g.RemoveEdge(t.Edge(intrf.Router.Node.ID(), intrf.Node.ID()))
-	t.g.RemoveEdge(t.Edge(intrf.Router.Node.ID(), intrf.NodeSubnets.ID()))
+	t.g.RemoveEdge(intrf.Router.Node.ID(), intrf.Node.ID())
+	t.g.RemoveEdge(intrf.Router.Node.ID(), intrf.NodeSubnets.ID())
 	log.Printf("Removing edge %s -> (interface) in graph",intrf.Router.Name)
 
 	if intrf.State == "down" {
