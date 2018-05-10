@@ -25,9 +25,9 @@ func (t *Test) getConnectedInterfacesFromInterface(intrf *Interface) []*Interfac
 
 	nodes := t.g.From(intrf.Node.ID())
 	for _, nodeTo := range nodes {
-		bIntrf := t.interfaceFromNode(nodeTo.ID())
-		if bIntrf != nil {
-			interfaces = append(interfaces, bIntrf)
+		bRouter := t.routerFromNode(nodeTo.ID())
+		if bRouter != nil {
+			interfaces = append(interfaces, t.EdgeToInterface[t.Edge(intrf.Node.ID(), bRouter.Node.ID())])
 		}
 	}
 
@@ -38,8 +38,8 @@ func (t *Test) getInterfaces(a,b *Router) []*Interface {
 	for _,intrf := range a.Interfaces {
 		nodes := t.g.From(intrf.Node.ID())
 		for _, nodeTo := range nodes {
-			bIntrf := t.interfaceFromNode(nodeTo.ID())
-			if bIntrf != nil && bIntrf.Router == b {
+			bRouter := t.routerFromNode(nodeTo.ID())
+			if bRouter != nil && bRouter == b {
 				interfaces = append(interfaces, intrf)
 			}
 		}
@@ -55,6 +55,7 @@ func (t *Test) getInterfaces(a,b *Router) []*Interface {
 func (t *Test) GetSingleInterfaceBetween(a,b *Router) *Interface {
 	interfaces := t.getInterfaces(a,b)
 	if len(interfaces) > 1 {
+		log.Print(interfaces)
 		panic("this method doesnt work for multiple connections between routers")
 	}
 	return interfaces[0]

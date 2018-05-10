@@ -31,11 +31,12 @@ func ip2int(ipStr string) uint32 {
 func NewTest() *Test {
 	var initialIP uint32
 	initialIP = (0x1) + (0x01<<8) + (0x01<<16) + (0x01<<24)
-	return &Test{routerCnt: 0, addrMaskBits: 24, addrIp: initialIP, g: simple.NewWeightedDirectedGraph(0,100), NodeToStruct: make(map[int64]interface{}), Subnets: make(map[SubnetKey]*Subnet)}
+	return &Test{routerCnt: 0, addrMaskBits: 24, addrIp: initialIP, g: simple.NewWeightedDirectedGraph(0,100), NodeToStruct: make(map[int64]interface{}), Subnets: make(map[SubnetKey]*Subnet), EdgeToInterface: make(map[graph.Edge]*Interface)}
 }
 
 type Test struct {
 	NodeToStruct map[int64]interface{}
+	EdgeToInterface map[graph.Edge]*Interface
 	Routers []*Router
 	Subnets map[SubnetKey]*Subnet
 	routerCnt int
@@ -167,10 +168,13 @@ func (t *Test) GetInterfaceByIP(ip uint32) *Interface {
 }
 
 func (t *Test) LinkInterfaces(aIntrf *Interface, bIntrf *Interface) {
-	interfaceToInterface := t.NewWeightedEdge(aIntrf.Node, bIntrf.Node, 0)		
+	interfaceToInterface := t.NewWeightedEdge(aIntrf.Node, bIntrf.Router.Node, 0)		
 	t.g.SetWeightedEdge(interfaceToInterface)	
-	interfaceToInterface = t.NewWeightedEdge(bIntrf.Node, aIntrf.Node, 0)		
+	t.EdgeToInterface[t.Edge(aIntrf.Node.ID(), bIntrf.Router.Node.ID())] = bIntrf
+
+	interfaceToInterface = t.NewWeightedEdge(bIntrf.Node, aIntrf.Router.Node, 0)		
 	t.g.SetWeightedEdge(interfaceToInterface)	
+	t.EdgeToInterface[t.Edge(bIntrf.Node.ID(), aIntrf.Router.Node.ID())] = aIntrf
 }
 
 func (t *Test) ConnectRoutersUni(a,b *Router, cost float64, ip, mask,toip uint32) {
@@ -181,8 +185,9 @@ func (t *Test) ConnectRoutersUni(a,b *Router, cost float64, ip, mask,toip uint32
 
 	t.SetInterfaceCost(aIntrf, cost)
 
-	interfaceToInterface := t.NewWeightedEdge(aIntrf.Node, bIntrf.Node, 0)		
+	interfaceToInterface := t.NewWeightedEdge(aIntrf.Node, b.Node, 0)		
 	t.g.SetWeightedEdge(interfaceToInterface)
+	t.EdgeToInterface[t.Edge(aIntrf.Node.ID(), b.Node.ID())] = bIntrf
 
 	//t.EdgeToInterfaces[aSubnet.WeightedEdge] = 
 }
@@ -251,8 +256,8 @@ func (t *Test) GetOrCreateInterface(r* Router, ip, mask uint32, subnet *Subnet) 
 	nS := t.NewNode(r.Name + "_is")
 	t.g.AddNode(nS)
 
-	interfaceRouter := t.NewWeightedEdge(n, r.Node, 0)	
-	t.g.SetWeightedEdge(interfaceRouter)
+	// interfaceRouter := t.NewWeightedEdge(n, r.Node, 0)	
+	// t.g.SetWeightedEdge(interfaceRouter)
 
 	interfaceSubnet := t.NewWeightedEdge(nS, subnet.Node, 0)	
 	t.g.SetWeightedEdge(interfaceSubnet)

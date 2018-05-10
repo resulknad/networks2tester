@@ -49,7 +49,7 @@ func (t *Test) ShortestRoutesCorrect() bool {
 						}
 						nextHopCorrect = 0
 					default:
-						nextInterface := t.InterfaceFromNode(nodesList[2].ID())
+						nextInterface := t.EdgeToInterface[t.Edge(nodesList[1].ID(),nodesList[2].ID())]
 						nextHopCorrect = nextInterface.Address
 				}
 

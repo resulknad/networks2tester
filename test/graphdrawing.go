@@ -41,12 +41,12 @@ type CustomNode struct {
 	Attrs
 }
 
-func (t *Test) Edge(a,b int64) CustomEdge{
+func (t *Test) Edge(a,b int64) graph.WeightedEdge {
 	ce,ok := t.g.Edge(a,b).(CustomEdge)
 	if !ok {
 		panic("Expected custom edge, didnt get custom edge")
 	}
-	return ce
+	return ce.WeightedEdge
 }
 
 

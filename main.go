@@ -53,13 +53,14 @@ func main() {
 	log.SetOutput(f)
 	
 	tests := []TestInfo{
-		TestInfo{Desc: "Fully connected, remove and add all", N:4, Timeout:60, launch:FullyConnectedDropSlowly, MaxRetry:2},
+		TestInfo{Desc: "Fully connected, remove and add all", N:3, Timeout:60, launch:FullyConnectedDropSlowly, MaxRetry:2},
 		TestInfo{Desc: "Small graph weight adjustment", N:0, Timeout:60, launch:BasicWeightAdjustment, MaxRetry:2},
 		TestInfo{Desc: "complex.topo", N:0, Timeout:60, launch:ComplexTopo, MaxRetry:2},
 		TestInfo{Desc: "star.topo", N:0, Timeout:60, launch:StarTopo, MaxRetry:2},
 		TestInfo{Desc: "simple.topo", N:0, Timeout:60, launch:SimpleTopo, MaxRetry:2},
 		TestInfo{Desc: "tri.topo", N:0, Timeout:60, launch:TriTopo, MaxRetry:2},
-		TestInfo{Desc: "complex2.topo", N:0, Timeout:60, launch:Complex2Topo, MaxRetry:2}}
+		TestInfo{Desc: "complex2.topo", N:0, Timeout:60, launch:Complex2Topo, MaxRetry:2},
+		TestInfo{Desc: "twocon.topo", N:0, Timeout:60, launch:TwoconTopo, MaxRetry:2}}
 	
 	runTest := func(i int,ti TestInfo) {
 		log.Print("Starting Test " + ti.Desc)
@@ -82,6 +83,18 @@ func main() {
 
 }
 
+func TwoconTopo(n int, timeout int) bool {
+	t := ParseTopoFile("twocon.topo")
+	defer t.TearDown()
+
+	t.DrawGraph("out.svg")
+	t.StartTest()
+
+	if !t.WaitUntilCorrect(timeout) {
+		return false
+	}
+	return true
+}
 func ComplexTopo(n int, timeout int) bool {
 	t := ParseTopoFile("complex.topo")
 	defer t.TearDown()

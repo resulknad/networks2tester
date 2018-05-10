@@ -1,0 +1,6 @@
+node add a dr 1.1.1.1/24
+node add b dr 2.2.2.2/24 1.1.1.2/24
+node add c dr 3.3.3.3/24 1.1.1.3/24
+
+link add 1.1.1.1 1.1.1.2
+link add 1.1.1.1 1.1.1.3
