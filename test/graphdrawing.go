@@ -79,7 +79,9 @@ func (t *Test) DrawGraph(outfile string) {
 	}
 
 	if err := cmd.Start(); err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		stdin.Close()
+		return
 	}
 
 	stdin.Write([]byte(dotstring))

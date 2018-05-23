@@ -59,8 +59,7 @@ func main() {
 		TestInfo{Desc: "star.topo", N:0, Timeout:60, launch:StarTopo, MaxRetry:2},
 		TestInfo{Desc: "simple.topo", N:0, Timeout:60, launch:SimpleTopo, MaxRetry:2},
 		TestInfo{Desc: "tri.topo", N:0, Timeout:60, launch:TriTopo, MaxRetry:2},
-		TestInfo{Desc: "complex2.topo", N:0, Timeout:60, launch:Complex2Topo, MaxRetry:2},
-		TestInfo{Desc: "twocon.topo", N:0, Timeout:60, launch:TwoconTopo, MaxRetry:2}}
+		TestInfo{Desc: "complex2.topo", N:0, Timeout:60, launch:Complex2Topo, MaxRetry:2}}
 	
 	runTest := func(i int,ti TestInfo) {
 		log.Print("Starting Test " + ti.Desc)
