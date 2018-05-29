@@ -3,7 +3,16 @@ package test
 import "os/exec" 
 import "os"
 import "log"
+import "github.com/struCoder/pidusage"
 
+func (ti *TestInstance) MemUsage() []float64 {
+  var memUsage []float64
+  for _, pid := range ti.pids {
+	stat, _ := pidusage.GetStat(pid)	
+	memUsage = append(memUsage,stat.Memory)
+  }
+  return memUsage
+}
 func (ti *TestInstance) startRouter(router *Router) {
 	quitCh := make(chan bool)
 	ti.quitChs = append([]chan bool{quitCh}, ti.quitChs...)
@@ -20,6 +29,7 @@ func (ti *TestInstance) startRouter(router *Router) {
     cmd.Stdout = outfile
     cmd.Stderr = outfile
 	cmd.Start()
+	ti.pids = append(ti.pids, cmd.Process.Pid)
 	go func() {
 		defer deferKillUponPanic(cmd)
 		<-quitCh

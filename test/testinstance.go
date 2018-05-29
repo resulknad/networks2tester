@@ -8,10 +8,12 @@ func NewTestInstance(test *Test) (*TestInstance){
 	return &TestInstance{test: test}	
 }
 
+
 type TestInstance struct {
 	sync.Mutex
 	test *Test
 	port string
+	pids []int
 	chLvnsStdout chan lvnsMsg
 	chLvnsStdin chan lvnsMsg
 	quitChs []chan bool

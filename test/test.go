@@ -228,6 +228,10 @@ func (t *Test) TearDown() {
 	t.instance.TearDown()
 }
 
+func (t *Test) MemUsage() []float64 {
+	return t.instance.MemUsage()
+}
+
 func (r *Router) AddInterface(address, mask uint32, subnet *Subnet, n graph.Node, nodeSubnets graph.Node) (*Interface) {	
 	intrf := &Interface{Address: address, Mask:mask, Subnet: subnet, State:"up", Node: n, Router: r, NodeSubnets: nodeSubnets}
 	r.Interfaces = append(r.Interfaces, intrf)

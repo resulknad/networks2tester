@@ -156,7 +156,6 @@ func (ti *TestInstance) SetState(intrf *Interface, state string) {
 	msg := ti.lvnsAwaitMsg("state", []string{"prompt"})
 	log.Print("lvns server changed state to " + msg.Msg)
 	if msg.Msg != state {
-
 		panic("lvns server didnt respond to state change as expected")
 	}
 }

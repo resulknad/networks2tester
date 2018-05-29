@@ -5,6 +5,7 @@ import "log"
 import "os"
 import "fmt"
 import "flag"
+// import "time"
 
 type TestInfo struct {
 	Desc string
@@ -16,11 +17,11 @@ type TestInfo struct {
 
 func (ti *TestInfo) launchTest() (err bool,success bool){
 	defer func() {
-		if r:= recover(); r!=nil {
+		/*if r:= recover(); r!=nil {
 			log.Println("recovered from ",r)
 			err = true
 			success = false
-		}
+		}*/
 	}()
 	
 	err = false
@@ -59,7 +60,8 @@ func main() {
 		TestInfo{Desc: "star.topo", N:0, Timeout:60, launch:StarTopo, MaxRetry:2},
 		TestInfo{Desc: "simple.topo", N:0, Timeout:60, launch:SimpleTopo, MaxRetry:2},
 		TestInfo{Desc: "tri.topo", N:0, Timeout:60, launch:TriTopo, MaxRetry:2},
-		TestInfo{Desc: "complex2.topo", N:0, Timeout:60, launch:Complex2Topo, MaxRetry:2}}
+		TestInfo{Desc: "complex2.topo", N:0, Timeout:60, launch:Complex2Topo, MaxRetry:2},
+		TestInfo{Desc: "Memory Usage", N:3, Timeout:60, launch:MemUsage, MaxRetry:2}}
 	
 	runTest := func(i int,ti TestInfo) {
 		log.Print("Starting Test " + ti.Desc)
@@ -198,6 +200,58 @@ func BasicWeightAdjustment(n int, timeout int) bool {
 
 	return true
 }
+
+func MemUsage(n int, timeout int) bool {
+	t := test.NewTest()
+	defer t.TearDown()
+	routers := []*test.Router{}
+
+	for i:=0; i<n; i++ {
+		routers = append(routers,t.AddRouter())
+	}
+
+	for i:=0; i<n; i++ {
+		for j:=i+1; j<n; j++ {
+			if i!=j {
+				t.ConnectRouters(routers[i], routers[j], 1, 1)
+			}
+		}
+	}
+
+	t.DrawGraph("out.svg")
+	t.StartTest()
+	initialMemUsage := t.MemUsage()
+
+	for k:=0; k<20000; k++ {
+	  for i:=0; i<n; i++ {
+		  for j:=0; j<n; j++ {
+			  if i!=j {
+				  t.TakeDownUni(routers[i], routers[j])
+			  }
+		  }
+	  }
+
+	  for i:=0; i<n; i++ {
+		  for j:=0; j<n; j++ {
+			  if i!=j {
+				  t.PutUpUni(routers[i], routers[j])
+			  }
+		  }
+	  }
+	}
+	
+	maxChange := 0.
+	finalMemUsage := t.MemUsage()
+	for i, m := range initialMemUsage {
+	  diff := (finalMemUsage[i] - m)
+	  diffP := (diff/m)*100
+	  log.Printf("Memory changed by %f (%f%%)",diff, diffP)
+	  if diffP > maxChange {
+		maxChange = diffP
+	  }
+	}
+	return maxChange < 120
+  }
 
 func FullyConnectedDropSlowly(n int, timeout int) bool {
 	t := test.NewTest()
