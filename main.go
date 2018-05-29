@@ -17,11 +17,11 @@ type TestInfo struct {
 
 func (ti *TestInfo) launchTest() (err bool,success bool){
 	defer func() {
-		/*if r:= recover(); r!=nil {
+		if r:= recover(); r!=nil {
 			log.Println("recovered from ",r)
 			err = true
 			success = false
-		}*/
+		}
 	}()
 	
 	err = false
