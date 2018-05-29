@@ -5,7 +5,7 @@ import "log"
 import "os"
 import "fmt"
 import "flag"
-// import "time"
+import "time"
 
 type TestInfo struct {
 	Desc string
@@ -61,7 +61,10 @@ func main() {
 		TestInfo{Desc: "simple.topo", N:0, Timeout:60, launch:SimpleTopo, MaxRetry:2},
 		TestInfo{Desc: "tri.topo", N:0, Timeout:60, launch:TriTopo, MaxRetry:2},
 		TestInfo{Desc: "complex2.topo", N:0, Timeout:60, launch:Complex2Topo, MaxRetry:2},
-		TestInfo{Desc: "Memory Usage", N:3, Timeout:60, launch:MemUsage, MaxRetry:2}}
+		TestInfo{Desc: "Memory Leaks (only for interface changes)", N:3, Timeout:60, launch:MemUsage, MaxRetry:2},
+		TestInfo{Desc: "Triggered Update (set down)", N:3, Timeout:60, launch:TriggeredUpdateRemove, MaxRetry:2},
+		TestInfo{Desc: "Triggered Update (cost change)", N:3, Timeout:60, launch:TriggeredUpdateCost, MaxRetry:2},
+		TestInfo{Desc: "Longest Prefix Matching", N:3, Timeout:60, launch:LongestPrefixMatching, MaxRetry:2}}
 	
 	runTest := func(i int,ti TestInfo) {
 		log.Print("Starting Test " + ti.Desc)
@@ -72,6 +75,7 @@ func main() {
 		} else {
 			fmt.Printf("%t\n", suc)
 		}
+		time.Sleep(1*time.Second)
 	}
 
 	if *singleTest != -1 {
@@ -159,6 +163,91 @@ func TriTopo(n int, timeout int) bool {
 		return false
 	}
 	return true
+}
+
+func TriggeredUpdateRemove(N int, timeout int) bool {
+  return TriggeredUpdate(N, timeout, true)
+}
+func TriggeredUpdateCost(N int, timeout int) bool {
+  return TriggeredUpdate(N, timeout, false)
+}
+func TriggeredUpdate(N int, timeout int, remove bool) bool {
+	t := test.NewTest()
+	defer t.TearDown()
+	routers := []*test.Router{}
+	for i:=0; i<N; i++ {
+	  routers = append(routers,t.AddRouter())
+	}
+
+	// this adds an interface to d1, which isn't connected to any router...
+	ip,mask := t.NextAddressSpace()
+	subnet := t.GetOrCreateSubnet(ip,mask)
+	intrf := t.GetOrCreateInterface(routers[0], ip, mask, subnet)
+	t.SetInterfaceCost(intrf, 1)
+
+	// creates a triangle, but bc of cost 16, traffic can only move in one direction
+	// advertisments in both directions
+	for i:=0; i<N; i++ {
+		ip2,mask2 := t.NextAddressSpace()
+		t.ConnectRoutersUni(routers[((i-1)+N)%(N)], routers[i], 1, ip2, mask2, ip2+1)
+		t.ConnectRoutersUni(routers[i],routers[((i-1)+N)%(N)],  16, ip2+1, mask2, ip2)
+	}	 
+	
+	t.DrawGraph("out.svg")
+	t.StartTest()
+
+	// wait for initial convergence
+	if !t.WaitUntilCorrect(timeout) {
+		return false
+	}
+
+	if remove {
+	  t.TakeDownInterface(intrf) 
+	} else {
+	  t.SetCostGraphAndInstance(intrf, 17)
+	}
+
+	// if triggered updates arent implemented,
+	// this will converge very slowly now
+	// for route to subnet 1.1.2.0 the next hops are (w/o triggered updates):
+	// d1: d3
+	// d2: d1
+	// d3: d2
+	// with triggered updates, this doesnt happen.
+
+	t.DrawGraph("out.svg")
+	if !t.WaitUntilCorrect(5) {
+		return false
+	}
+	return true
+}
+
+func LongestPrefixMatching(N int, timeout int) bool {
+	
+	lengthToMask := func(n uint) uint32 { return (0xFFFFFFFF)<<(32-n) }
+	ip := test.Ip2int("123.123.123.123")
+
+	t := test.NewTest()
+	defer t.TearDown()
+
+	router := t.AddRouter()
+	
+	var i uint
+	for i=8; i<30; i+=5 {
+	  rt := t.AddRouter()
+	  t.ConnectRouters(router,rt,1,1)
+
+	  mask := lengthToMask(i)
+	  subnet := t.GetOrCreateSubnet(ip,mask)
+	  intrf := t.GetOrCreateInterface(rt, ip, mask, subnet)
+	  t.SetInterfaceCost(intrf, float64(i))
+	  ip+=1
+	}	 
+	
+	t.DrawGraph("out.svg")
+	t.StartTest()
+
+	return t.WaitUntilCorrect(timeout)
 }
 
 func BasicWeightAdjustment(n int, timeout int) bool {

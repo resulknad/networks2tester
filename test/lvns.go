@@ -213,6 +213,7 @@ func (ti *TestInstance) lvnsHandler(stdout chan string,stdin io.Writer, quitCh c
 	for {
 		select {
 		case msg:=<-stdout:
+		  // log.Print(msg)
 			if msg == "lvns> " {
 				ti.chLvnsStdout<-lvnsMsg{"prompt","",""}
 			} else if rPort.MatchString(msg) {

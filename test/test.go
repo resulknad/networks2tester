@@ -16,6 +16,7 @@ func int2ip(nn uint32) string {
 func Ip2int(ipStr string) uint32 {
 	return ip2int(ipStr)
 }
+
 func ip2int(ipStr string) uint32 {
 	ip := net.ParseIP(ipStr)
 	if ip == nil {
@@ -130,6 +131,19 @@ func (t *Test) AddRouter() *Router {
 	return t.AddCustomRouter(routerName)
 }
 
+func (t *Test) GetNextMoreGeneralSubnet(subnet *Subnet) *Subnet {
+	var mask uint32
+	mask = 0
+	var moreGeneral *Subnet
+	for _, sb := range t.Subnets {
+	  if sb.Mask > mask && sb.Mask < subnet.Mask /* biggest smaller than subnet.mask */ && sb.Address&sb.Mask == subnet.Address&sb.Mask { // that matches
+		mask = sb.Mask
+		moreGeneral = sb
+	}
+  }
+	return moreGeneral
+  }
+
 func (t *Test) GetOrCreateSubnet(ip, mask uint32) *Subnet {
 	sk := SubnetKey{ip&mask,mask}
 	subnet := t.Subnets[sk]
@@ -192,13 +206,13 @@ func (t *Test) ConnectRoutersUni(a,b *Router, cost float64, ip, mask,toip uint32
 	//t.EdgeToInterfaces[aSubnet.WeightedEdge] = 
 }
 
-func (t *Test) nextAddressSpace() (uint32, uint32) {
+func (t *Test) NextAddressSpace() (uint32, uint32) {
 	t.addrIp += (1<<(32-t.addrMaskBits))
 	mask := (0xFFFFFFFF)<<(32-t.addrMaskBits)
 	return t.addrIp, uint32(mask)
 }
 func (t *Test) ConnectRouters(a *Router, b *Router, costAB float64, costBA float64) {
-	ip,mask := t.nextAddressSpace()	
+	ip,mask := t.NextAddressSpace()	
 	t.ConnectRoutersUni(a,b,costAB, ip, mask, ip+1)
 	t.ConnectRoutersUni(b,a,costBA, ip+1, mask, ip)
 }
