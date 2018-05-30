@@ -1,6 +1,9 @@
 networks2tester
 ===============
+There's another tester with different testcases and methodology: [https://gitlab.vis.ethz.ch/gabrielg/drtest].
+
 **Do not expect this tester to be 100% correct.**
+
 **This tester might set the interface cost to >= 15, which might not be correct according to the standards.**
 
 Unofficial tester for second networks project. It constructs a graph, runs dijkstra on it and checks your implementation (whether all your next_hops are correct). Currently it doesn't look at your routing table. Supports dynamically adjusting weights and dropping links.
