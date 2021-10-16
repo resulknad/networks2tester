@@ -1,0 +1,5 @@
+# simple topology file for testing LVNS
+
+node add dr1 dr 10.0.0.1/30
+node add dr2 dr 10.0.0.2/30:2
+link add  10.0.0.1  10.0.0.2
