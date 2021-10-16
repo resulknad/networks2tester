@@ -55,6 +55,7 @@ func main() {
 	
 	tests := []TestInfo{
 		TestInfo{Desc: "Fully connected, remove and add all", N:3, Timeout:60, launch:FullyConnectedDropSlowly, MaxRetry:2},
+		TestInfo{Desc: "TwoCon", N:3, Timeout:60, launch:TwoconTopo, MaxRetry:2},
 		TestInfo{Desc: "Small graph weight adjustment", N:0, Timeout:60, launch:BasicWeightAdjustment, MaxRetry:2},
 		TestInfo{Desc: "complex.topo", N:0, Timeout:60, launch:ComplexTopo, MaxRetry:2},
 		TestInfo{Desc: "star.topo", N:0, Timeout:60, launch:StarTopo, MaxRetry:2},

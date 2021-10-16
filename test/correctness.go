@@ -20,20 +20,24 @@ func (t *Test) WaitUntilCorrect(timeoutSec int) bool {
 func (t *Test) ShortestRoutesCorrect() bool {
 	shortestPaths := path.DijkstraAllPaths(t.g)
 	for _,router := range t.Routers {
-		drRoutes := t.instance.GetRoutes(router.Name)	
-
+		drRoutes, drIntf := t.instance.GetRoutes(router.Name)
 		
 		//log.Printf("Got %d, total subnets %d",  len(drRoutes), len(t.Subnets))
 		log.Printf("Routes as reported by %s\n", router.Name)
 		  for s,r := range drRoutes {
-			log.Printf("To %s via %s (next hop)\n", int2ip(s), int2ip(r))
+			log.Printf("To %s via %s (next hop) over eth%v \n", int2ip(s), int2ip(r), drIntf[s])
 		  }
 		for _,subnet := range t.Subnets {
 		  nextHop := drRoutes[subnet.Address&subnet.Mask]
 		  if t.shortestFromRouterToSubnetCorrect(shortestPaths, nextHop, router, subnet) == false {
 			return false
 		  }
-		}	
+		}
+		for s,r := range drRoutes {
+			if !t.IsValidInterfacenextHopPair(drIntf[s], r, s, router) {
+ 				return false
+			}
+		  }	
 	}
 	return true
 }
@@ -87,4 +91,43 @@ func (t *Test) shortestFromRouterToSubnetCorrect(shortestPaths path.AllShortest,
 			}
 			return true
 		  }
+func (t *Test) IsValidInterfacenextHopPair(outgoingIntf uint32, nextHop uint32, destination uint32, router *Router) bool {
+	if ip2int("255.255.255.255") == nextHop{
+		if outgoingIntf == uint32(0) {
+			return true
+		} else {
+			log.Printf("Interface eth%v should be eth0, since next hop is %s\n", outgoingIntf, int2ip(nextHop))
+			return false
+		}
+	}
+	if nextHop == ip2int("0.0.0.0") {
+		if uint32(len(router.Interfaces)) <= outgoingIntf {
+			log.Printf("Interface eth%v does not exist\n", outgoingIntf)
+			return false
+		}
+		netMask := router.Interfaces[outgoingIntf].Mask
+		if router.Interfaces[outgoingIntf].Address & netMask == destination & netMask {
+			return true
+		} else {
+			log.Printf("Interface eth%v does not directly connect to %s\n", outgoingIntf, int2ip(destination))
+			return false
+		}
+	}
+	res := false
+	if uint32(len(router.Interfaces)) > outgoingIntf {
+		conInterfaces := t.getConnectedInterfacesFromInterface(router.Interfaces[outgoingIntf])
+		for _, conIntf := range conInterfaces {
+			if conIntf.Address == nextHop {
+				res = true
+			}
+		}
+	} else {
+		log.Printf("Interface eth%v does not exist\n", outgoingIntf)
+		return false
+	}
+	if !res {
+		log.Printf("Interface eth%v is not incident to %s\n", outgoingIntf, int2ip(nextHop))
+	}
+return res
+}
 

@@ -31,7 +31,7 @@ func (ti *TestInstance) createTopology() {
 		for _,intrf := range router.Interfaces {
 			interfaces = append(interfaces,intrf.String())
 		}
-		ti.chLvnsStdin<-lvnsMsg{"write", "node add " + router.Name + " dr " + strings.Join(interfaces," ") + "\n",""}
+		ti.chLvnsStdin<-lvnsMsg{"write", "node add " + router.Name + " dr " + strings.Join(interfaces," ") + "\n","", ""}
 		ti.lvnsWaitForPrompt()
 	}
 
@@ -47,7 +47,7 @@ func (ti *TestInstance) createTopology() {
 					continue
 				}
 
-				ti.chLvnsStdin<-lvnsMsg{"write", "link add " + intrf.StringIP() + " " + remoteIntrf.StringIP() + "\n",""}
+				ti.chLvnsStdin<-lvnsMsg{"write", "link add " + intrf.StringIP() + " " + remoteIntrf.StringIP() + "\n","", ""}
 				ti.lvnsWaitForPrompt()
 				added[InterfacePair{intrf,remoteIntrf}] = true
 				added[InterfacePair{remoteIntrf, intrf}] = true
