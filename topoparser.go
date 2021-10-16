@@ -6,6 +6,7 @@ import "strconv"
 import "bufio"
 import "log"
 import "os"
+import "fmt"
 
 func ParseTopoFile(f string) *test.Test {
 	t := test.NewTest()
@@ -17,6 +18,7 @@ func ParseTopoFile(f string) *test.Test {
 
 	file, err := os.Open(f)
     if err != nil {
+	fmt.Print("could not open " + f + ", please make sure, that it is in this directory\n")
         log.Fatal(err)
     }
     defer file.Close()
@@ -28,6 +30,7 @@ func ParseTopoFile(f string) *test.Test {
 			
 			matches := rNodeAdd.FindStringSubmatch(line)
 			rt := t.AddCustomRouter(matches[1])
+			intfnumber := 0
 			interfaces := rInterfaces.FindAllStringSubmatch(line, -1) 
 			for _,match := range interfaces {
 				ip := test.Ip2int(match[1])
@@ -42,6 +45,8 @@ func ParseTopoFile(f string) *test.Test {
 				subnet := t.GetOrCreateSubnet(ip, mask)
 				intrf := t.GetOrCreateInterface(rt, ip, mask, subnet)
 				t.SetInterfaceCost(intrf, float64(cost))
+
+				intfnumber = intfnumber + 1
 			}
 		}
 
