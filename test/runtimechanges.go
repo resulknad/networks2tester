@@ -24,8 +24,8 @@ func (t *Test) getConnectedInterfacesFromInterface(intrf *Interface) []*Interfac
 	var interfaces []*Interface
 
 	nodes := t.g.From(intrf.Node.ID())
-	for _, nodeTo := range nodes {
-		bRouter := t.routerFromNode(nodeTo.ID())
+	for nodes.Next() {
+		bRouter := t.routerFromNode(nodes.Node().ID())
 		if bRouter != nil {
 			interfaces = append(interfaces, t.EdgeToInterface[t.Edge(intrf.Node.ID(), bRouter.Node.ID())])
 		}
@@ -37,8 +37,8 @@ func (t *Test) getInterfaces(a,b *Router) []*Interface {
 	var interfaces []*Interface
 	for _,intrf := range a.Interfaces {
 		nodes := t.g.From(intrf.Node.ID())
-		for _, nodeTo := range nodes {
-			bRouter := t.routerFromNode(nodeTo.ID())
+		for nodes.Next() {
+			bRouter := t.routerFromNode(nodes.Node().ID())
 			if bRouter != nil && bRouter == b {
 				interfaces = append(interfaces, intrf)
 			}

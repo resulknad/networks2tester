@@ -69,7 +69,7 @@ func (t *Test) NewWeightedEdge(a,b graph.Node, weight float64) CustomEdge {
 
 func (t *Test) DrawGraph(outfile string) {
 
-	dotstring, _ := dot.Marshal(t.g, "", "", "  ", true)
+	dotstring, _ := dot.Marshal(t.g, "", "", "  ")
 	ioutil.WriteFile("dotfile", []byte(dotstring), 0644)
 	cmd := exec.Command("dot", "-Tsvg", "-o"+outfile)
 

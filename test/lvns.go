@@ -6,6 +6,7 @@ import "os/exec"
 import "io"
 import "bufio"
 import "time"
+import "strconv"
 //import "fmt"
 
 
@@ -13,6 +14,7 @@ type lvnsMsg struct {
 	Type string
 	Msg string
 	Msg2 string
+	Msg3 string
 }
 
 func createChanReader(rd io.Reader, quitCh chan bool) chan string {	
@@ -51,6 +53,7 @@ func createChanReader(rd io.Reader, quitCh chan bool) chan string {
 			default:
 			}
 			log.Print("lvns stdout reading error")
+			log.Print(err)
 		}
 	}()
 	return ch
@@ -140,7 +143,7 @@ func (ti *TestInstance) lvnsAwaitMsg(mType string, skipMsgs []string) lvnsMsg {
 }
 func (ti *TestInstance) SetCost(intrf *Interface) {
 	ti.lvnsFlushMessages()
-	ti.chLvnsStdin<-lvnsMsg{"write", "cost set intf " + intrf.StringIP() + " " + intrf.StringCost() + "\n",""}
+	ti.chLvnsStdin<-lvnsMsg{"write", "cost set intf " + intrf.StringIP() + " " + intrf.StringCost() + "\n","", ""}
 	msg := ti.lvnsAwaitMsg("state", []string{"prompt"})
 	if intrf.StringCost() != msg.Msg2 {
 		panic("lvns didnt change cost " + msg.Msg2)
@@ -151,7 +154,7 @@ func (ti *TestInstance) SetCost(intrf *Interface) {
 }
 
 func (ti *TestInstance) SetState(intrf *Interface, state string) {
-	ti.chLvnsStdin<-lvnsMsg{"write", "intf " + state + " " + intrf.StringIP() + "\n",""}
+	ti.chLvnsStdin<-lvnsMsg{"write", "intf " + state + " " + intrf.StringIP() + "\n","", ""}
 
 	msg := ti.lvnsAwaitMsg("state", []string{"prompt"})
 	log.Print("lvns server changed state to " + msg.Msg)
@@ -160,24 +163,30 @@ func (ti *TestInstance) SetState(intrf *Interface, state string) {
 	}
 }
 
-func (ti *TestInstance) GetRoutes(routerName string) map[uint32]uint32 {
+func (ti *TestInstance) GetRoutes(routerName string) (map[uint32]uint32, map[uint32]uint32) {
 	ti.Lock()
 	defer ti.Unlock()
 	ti.lvnsFlushMessages()
 	routes := make(map[uint32]uint32)
-	ti.chLvnsStdin<-lvnsMsg{"write", "route get " + routerName + " all\n",""}
+	outgoingIntf := make(map[uint32]uint32)
+	ti.chLvnsStdin<-lvnsMsg{"write", "route get " + routerName + " all\n","", ""}
 	
 	msg:=<-ti.chLvnsStdout
 	if msg.Type != "prompt" {
-		panic("expected prompt" + msg.Type)
+		panic("expected prompt, got: " + msg.Type + " " + msg.Msg)
 	}
 	for {
 		select {
 		case msg:=<-ti.chLvnsStdout:
 			if msg.Type == "route" {
 				routes[ip2int(msg.Msg)] = ip2int(msg.Msg2)
+				u64, err := strconv.ParseUint(msg.Msg3, 10, 32)
+			    	if err != nil {
+ 			       		log.Println(err)
+			    	}
+				outgoingIntf[ip2int(msg.Msg)] = uint32(u64)
 			} else if msg.Type == "prompt" {
-				return routes
+				return routes, outgoingIntf
 			}
 		case <-time.After(5*time.Second):
 			log.Print("didnt get answer upon get route request from lvns")
@@ -206,7 +215,8 @@ func (ti *TestInstance) lvnsHandler(stdout chan string,stdin io.Writer, quitCh c
 		}
 	}()
 	rPort := regexp.MustCompile("port ([0-9]+)")
-	rRoute := regexp.MustCompile(`will route to[\s]+([0-9.]+)[\s]+via a next hop of[\s]+([0-9.]+)[\s]+from eth([0-9])`) 
+	rRoute := regexp.MustCompile(`will route to[\s]+([0-9.]+)[\s]+via a next hop of[\s]+([0-9.]+)[\s]+from eth([0-9]+)`) 
+	//[0-9]
 	rConnected := regexp.MustCompile(`\*\*\*[\s]+([a-zA-Z0-9.]+) is now connected`)
 	rInterfaceState := regexp.MustCompile(`Interface state=([a-z]+) cost=([0-9]+)`)
 
@@ -215,25 +225,25 @@ func (ti *TestInstance) lvnsHandler(stdout chan string,stdin io.Writer, quitCh c
 		case msg:=<-stdout:
 		  // log.Print(msg)
 			if msg == "lvns> " {
-				ti.chLvnsStdout<-lvnsMsg{"prompt","",""}
+				ti.chLvnsStdout<-lvnsMsg{"prompt","","", ""}
 			} else if rPort.MatchString(msg) {
 				port := rPort.FindAllStringSubmatch(msg, -1)[0][1]
-				ti.chLvnsStdout<-lvnsMsg{"port", port,""}
+				ti.chLvnsStdout<-lvnsMsg{"port", port,"", ""}
 			} else if rRoute.MatchString(msg) {
 				matches := rRoute.FindStringSubmatch(msg)
 				to := matches[1]
 				next_hop := matches[2]
-				//intf [3]
-				ti.chLvnsStdout<-lvnsMsg{"route", to, next_hop}
+				//intf [3], ""
+				ti.chLvnsStdout<-lvnsMsg{"route", to, next_hop, matches[3]}
 			} else if rConnected.MatchString(msg) {
 				matches := rConnected.FindStringSubmatch(msg)
 				routerName := matches[1]
-				ti.chLvnsStdout<-lvnsMsg{"connected", routerName,""}
+				ti.chLvnsStdout<-lvnsMsg{"connected", routerName,"", ""}
 			} else if rInterfaceState.MatchString(msg) {
 				matches := rInterfaceState.FindStringSubmatch(msg)
 				state := matches[1]
 				cost := matches[2]
-				ti.chLvnsStdout<-lvnsMsg{"state", state,cost}
+				ti.chLvnsStdout<-lvnsMsg{"state", state,cost, ""}
 			}
 		case msg:=<-ti.chLvnsStdin:
 			if msg.Type == "write" {

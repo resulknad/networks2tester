@@ -42,7 +42,7 @@ func (ti *TestInfo) Execute() (err bool, succ bool) {
 
 
 func main() {
-	singleTest := flag.Int("t", -1, "run a single test")
+	singleTest := flag.Int("t", 0, "run a single test")
 	flag.Parse()
 	
 	f, err := os.OpenFile("tester.log", os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0666)
@@ -54,21 +54,26 @@ func main() {
 	log.SetOutput(f)
 	
 	tests := []TestInfo{
-		TestInfo{Desc: "Fully connected, remove and add all", N:3, Timeout:60, launch:FullyConnectedDropSlowly, MaxRetry:2},
-		TestInfo{Desc: "Small graph weight adjustment", N:0, Timeout:60, launch:BasicWeightAdjustment, MaxRetry:2},
-		TestInfo{Desc: "complex.topo", N:0, Timeout:60, launch:ComplexTopo, MaxRetry:2},
-		TestInfo{Desc: "star.topo", N:0, Timeout:60, launch:StarTopo, MaxRetry:2},
-		TestInfo{Desc: "simple.topo", N:0, Timeout:60, launch:SimpleTopo, MaxRetry:2},
-		TestInfo{Desc: "tri.topo", N:0, Timeout:60, launch:TriTopo, MaxRetry:2},
-		TestInfo{Desc: "complex2.topo", N:0, Timeout:60, launch:Complex2Topo, MaxRetry:2},
-		TestInfo{Desc: "Memory Leaks (only for interface changes)", N:3, Timeout:60, launch:MemUsage, MaxRetry:2},
-		TestInfo{Desc: "Triggered Update (set down)", N:3, Timeout:60, launch:TriggeredUpdateRemove, MaxRetry:2},
-		TestInfo{Desc: "Triggered Update (cost change)", N:3, Timeout:60, launch:TriggeredUpdateCost, MaxRetry:2},
-		TestInfo{Desc: "Longest Prefix Matching", N:3, Timeout:60, launch:LongestPrefixMatching, MaxRetry:2}}
+		TestInfo{Desc: "simple.topo", N:0, Timeout:60, launch:SimpleTopo, MaxRetry:4},
+		TestInfo{Desc: "complex.topo", N:0, Timeout:60, launch:ComplexTopo, MaxRetry:4},
+		TestInfo{Desc: "star.topo", N:0, Timeout:60, launch:StarTopo, MaxRetry:4},
+		TestInfo{Desc: "tri.topo", N:0, Timeout:60, launch:TriTopo, MaxRetry:4},
+		TestInfo{Desc: "complex2.topo", N:0, Timeout:60, launch:Complex2Topo, MaxRetry:4},
+		TestInfo{Desc: "Fully connected, remove and add all", N:3, Timeout:60, launch:FullyConnectedDropSlowly, MaxRetry:4},
+		TestInfo{Desc: "Circle", N:0, Timeout:60, launch:Circle, MaxRetry:4},
+		TestInfo{Desc: "Horseshoe", N:0, Timeout:60, launch:Horseshoe, MaxRetry:4},
+		TestInfo{Desc: "Longbus", N:0, Timeout:60, launch:Longbus, MaxRetry:4},
+		TestInfo{Desc: "Small graph weight adjustment", N:0, Timeout:60, launch:BasicWeightAdjustment, MaxRetry:4},
+		TestInfo{Desc: "Triggered Update (set down)", N:3, Timeout:60, launch:TriggeredUpdateRemove, MaxRetry:4},
+		TestInfo{Desc: "Triggered Update (cost change)", N:3, Timeout:60, launch:TriggeredUpdateCost, MaxRetry:4},
+		TestInfo{Desc: "Longest Prefix Matching", N:3, Timeout:60, launch:LongestPrefixMatching, MaxRetry:4},
+		TestInfo{Desc: "Memory Leaks (only for interface changes)", N:3, Timeout:60, launch:MemUsage, MaxRetry:4},
+		TestInfo{Desc: "Two Connections(if you are geeking out about the project!)", N:0, Timeout:30, launch:TwoconTopo, MaxRetry:4}}
+
 	
 	runTest := func(i int,ti TestInfo) {
 		log.Print("Starting Test " + ti.Desc)
-		fmt.Printf("Test %d (%s): ",i,ti.Desc)
+		fmt.Printf("Test %d (%s): ",i + 1,ti.Desc)
 		err, suc := ti.Execute()
 		if err {
 			fmt.Println("(ERR)")
@@ -78,10 +83,14 @@ func main() {
 		time.Sleep(1*time.Second)
 	}
 
-	if *singleTest != -1 {
-		runTest(*singleTest, tests[*singleTest])	
+	if *singleTest > 0 {
+		if *singleTest > len(tests) {
+			return
+		}
+		runTest(*singleTest - 1, tests[*singleTest - 1])	
 		return
 	}
+	fmt.Printf("%d Tests in total\n", len(tests))
 	for i,ti := range tests {
 		runTest(i,ti)
 	}
@@ -94,7 +103,6 @@ func TwoconTopo(n int, timeout int) bool {
 
 	t.DrawGraph("out.svg")
 	t.StartTest()
-
 	if !t.WaitUntilCorrect(timeout) {
 		return false
 	}
@@ -102,6 +110,19 @@ func TwoconTopo(n int, timeout int) bool {
 }
 func ComplexTopo(n int, timeout int) bool {
 	t := ParseTopoFile("complex.topo")
+	defer t.TearDown()
+
+	t.DrawGraph("out.svg")
+	t.StartTest()
+
+	if !t.WaitUntilCorrect(timeout) {
+		return false
+	}
+	return true
+}
+
+func Circle(n int, timeout int) bool {
+	t := ParseTopoFile("circle.topo")
 	defer t.TearDown()
 
 	t.DrawGraph("out.svg")
@@ -154,6 +175,32 @@ func StarTopo(n int, timeout int) bool {
 
 func TriTopo(n int, timeout int) bool {
 	t := ParseTopoFile("tri.topo")
+	defer t.TearDown()
+
+	t.DrawGraph("out.svg")
+	t.StartTest()
+
+	if !t.WaitUntilCorrect(timeout) {
+		return false
+	}
+	return true
+}
+
+func Horseshoe(n int, timeout int) bool {
+	t := ParseTopoFile("horseshoe.topo")
+	defer t.TearDown()
+
+	t.DrawGraph("out.svg")
+	t.StartTest()
+
+	if !t.WaitUntilCorrect(timeout) {
+		return false
+	}
+	return true
+}
+
+func Longbus(n int, timeout int) bool {
+	t := ParseTopoFile("longbus.topo")
 	defer t.TearDown()
 
 	t.DrawGraph("out.svg")
