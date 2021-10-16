@@ -17,10 +17,22 @@ https://github.com/resulknad/networks2tester/releases
 ### From Source
 Install golang 1.10 (older versions might work as well, didn't test) and set path variables as described in installation instructions of golang.
 
+```bash
+export PATH=$PATH:/usr/local/go/bin
+```
+
 For the graph visualization the graphviz package is required. Tester might fail if dot executable isn't available on your system.
 
 ```bash
 go get -u github.com/resulknad/networks2tester
+```
+To compile
+```bash
+go install github.com/resulknad/networks2tester
+```
+The binary will be located in 
+```bash
+cd go/bin
 ```
 
 ## Usage
